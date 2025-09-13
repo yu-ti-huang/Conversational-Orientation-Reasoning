@@ -11,7 +11,7 @@ import pandas as pd
 class A2AblationEvaluator:
     """A2 Ablation Study: ASR Text Only (No Coordinates)"""
 
-    def __init__(self, model_path="./models/llama-step3/final_model", csv_path="./spatial_test.csv"):
+    def __init__(self, model_path="./models/llama-step3/final_model", csv_path="./step3_test.csv"):
         self.model_path = model_path
         self.csv_path = csv_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -188,10 +188,10 @@ class A2AblationEvaluator:
 
 
 def main():
-    evaluator = A2AblationEvaluator(csv_path="./spatial_test.csv")
+    evaluator = A2AblationEvaluator(csv_path="./step3_test.csv")
     results = evaluator.run_evaluation()
     print("\n" + "="*60)
-    print("FINAL A2 RESULTS FOR PAPER:")
+    print("FINAL A2 RESULTS:")
     print(f"A2 Orientation Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"A2 Format Error Rate: {results['metrics']['format_error_rate']:.3f}")
     print("="*60)
