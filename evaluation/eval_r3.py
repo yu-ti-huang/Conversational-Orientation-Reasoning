@@ -71,7 +71,7 @@ class R3EvaluatorReferentialAmbiguity:
         self.model.eval()
         print("Step 3 model loaded successfully!")
 
-    def load_robustness_dataset(self, excel_path="Spatial_Robustness.xlsx"):
+    def load_robustness_dataset(self, excel_path="r3_robustness.xlsx"):
         print(f"Loading robustness test dataset from: {excel_path}")
         df = pd.read_excel(excel_path) if excel_path.endswith('.xlsx') else pd.read_csv(excel_path)
         print(f"Robustness dataset loaded: {len(df)} samples")
@@ -86,12 +86,11 @@ class R3EvaluatorReferentialAmbiguity:
     def create_multimodal_input(self, row):
         audio_part = row['original_text']
         coordinates_part = row['landmarks']
-        multimodal_input = f"Audio: {audio_part} | Coordinates: {coordinates_part}"
-        return multimodal_input
+        return f"Audio: {audio_part} | Coordinates: {coordinates_part}"
 
     def extract_orientation(self, response: str) -> Optional[str]:
         response = response.strip()
-        orientation_patterns = [
+        patterns = [
             r'Final Answer[:：]\s*(North|South|East|West)',
             r'結論[:：]\s*使用者面朝([東西南北])方?',
             r'結論[:：].*?使用者.*?面朝([東西南北])方?',
@@ -102,14 +101,14 @@ class R3EvaluatorReferentialAmbiguity:
             r'(North|South|East|West)\s*$',
             r'([東西南北])方?\s*$'
         ]
-        for pattern in orientation_patterns:
-            match = re.search(pattern, response, re.IGNORECASE)
-            if match:
-                direction = match.group(1)
-                if direction in ['東', '西', '南', '北']:
-                    direction_map = {'東': 'East', '西': 'West', '南': 'South', '北': 'North'}
-                    return direction_map.get(direction, direction)
-                return direction
+        for p in patterns:
+            m = re.search(p, response, re.IGNORECASE)
+            if m:
+                d = m.group(1)
+                if d in ['東', '西', '南', '北']:
+                    zh2en = {'東': 'East', '西': 'West', '南': 'South', '北': 'North'}
+                    return zh2en.get(d, d)
+                return d
         return None
 
     def generate_response(self, user_input: str) -> str:
@@ -129,108 +128,87 @@ class R3EvaluatorReferentialAmbiguity:
                 eos_token_id=self.tokenizer.eos_token_id,
                 stopping_criteria=stopping
             )
-        generated_text = self.tokenizer.decode(
-            outputs[0][inputs['input_ids'].shape[1]:],
-            skip_special_tokens=True
-        ).strip()
+        generated_text = self.tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True).strip()
         del outputs, inputs
         self.clear_memory()
         return generated_text
 
     def analyze_ambiguity_robustness(self, results, test_df) -> Dict[str, Any]:
-        analysis = {
-            'overall_robustness': 0.0,
-            'subtype_performance': {},
-            'ambiguity_impact': {},
-            'variation_details_performance': {}
-        }
+        analysis = {'overall_robustness': 0.0, 'subtype_performance': {}, 'ambiguity_impact': {}, 'variation_details_performance': {}}
         correct = sum(1 for r in results if r.get('orientation_correct', False))
         total = len(results)
         analysis['overall_robustness'] = correct / total if total > 0 else 0.0
 
         if 'variation_subtype' in test_df.columns:
-            subtypes = test_df['variation_subtype'].unique()
-            for subtype in subtypes:
+            for subtype in test_df['variation_subtype'].unique():
                 if pd.isna(subtype):
                     continue
-                subtype_results = [r for i, r in enumerate(results) if test_df.iloc[i]['variation_subtype'] == subtype]
-                if subtype_results:
-                    subtype_acc = sum(1 for r in subtype_results if r.get('orientation_correct', False)) / len(subtype_results)
-                    analysis['subtype_performance'][subtype] = {
-                        'accuracy': subtype_acc,
-                        'count': len(subtype_results)
-                    }
+                subs = [r for i, r in enumerate(results) if test_df.iloc[i]['variation_subtype'] == subtype]
+                if subs:
+                    acc = sum(1 for r in subs if r.get('orientation_correct', False)) / len(subs)
+                    analysis['subtype_performance'][subtype] = {'accuracy': acc, 'count': len(subs)}
 
         if 'variation_details' in test_df.columns:
-            variation_details = test_df['variation_details'].unique()
-            for detail in variation_details:
+            for detail in test_df['variation_details'].unique():
                 if pd.isna(detail):
                     continue
-                detail_results = [r for i, r in enumerate(results) if test_df.iloc[i]['variation_details'] == detail]
-                if detail_results and len(detail_results) >= 2:
-                    detail_acc = sum(1 for r in detail_results if r.get('orientation_correct', False)) / len(detail_results)
-                    analysis['variation_details_performance'][detail] = {
-                        'accuracy': detail_acc,
-                        'count': len(detail_results)
-                    }
+                dets = [r for i, r in enumerate(results) if test_df.iloc[i]['variation_details'] == detail]
+                if dets and len(dets) >= 2:
+                    acc = sum(1 for r in dets if r.get('orientation_correct', False)) / len(dets)
+                    analysis['variation_details_performance'][detail] = {'accuracy': acc, 'count': len(dets)}
         return analysis
 
     def error_pattern_analysis(self, results, test_df) -> Dict[str, Any]:
-        error_patterns = {'errors_by_ambiguity_type': {}, 'errors_by_variation_details': {}, 'all_error_cases': []}
-        for i, result in enumerate(results):
-            if not result.get('orientation_correct', False):
-                row = test_df.iloc[i] if i < len(test_df) else {}
-                error_patterns['all_error_cases'].append({
-                    'sample_id': result.get('sample_id', i),
-                    'input': result.get('input', ''),
-                    'expected_orientation': result.get('expected_orientation', ''),
-                    'predicted_orientation': result.get('predicted_orientation', ''),
-                    'predicted_output': result.get('predicted_output', ''),
-                    'variation_subtype': result.get('variation_subtype', ''),
-                    'variation_details': result.get('variation_details', ''),
-                    'spatial_relation': result.get('spatial_relation', ''),
-                    'error_type': 'format_error' if result.get('predicted_orientation') is None else 'misclassification'
+        out = {'errors_by_ambiguity_type': {}, 'errors_by_variation_details': {}, 'all_error_cases': []}
+        for i, r in enumerate(results):
+            if not r.get('orientation_correct', False):
+                out['all_error_cases'].append({
+                    'sample_id': r.get('sample_id', i),
+                    'input': r.get('input', ''),
+                    'expected_orientation': r.get('expected_orientation', ''),
+                    'predicted_orientation': r.get('predicted_orientation', ''),
+                    'predicted_output': r.get('predicted_output', ''),
+                    'variation_subtype': r.get('variation_subtype', ''),
+                    'variation_details': r.get('variation_details', ''),
+                    'spatial_relation': r.get('spatial_relation', ''),
+                    'error_type': 'format_error' if r.get('predicted_orientation') is None else 'misclassification'
                 })
-                amb_type = result.get('variation_subtype', 'unknown')
-                if amb_type not in error_patterns['errors_by_ambiguity_type']:
-                    error_patterns['errors_by_ambiguity_type'][amb_type] = 0
-                error_patterns['errors_by_ambiguity_type'][amb_type] += 1
-                var_details = result.get('variation_details', 'unknown')
-                if var_details not in error_patterns['errors_by_variation_details']:
-                    error_patterns['errors_by_variation_details'][var_details] = 0
-                error_patterns['errors_by_variation_details'][var_details] += 1
-        return error_patterns
+                amb = r.get('variation_subtype', 'unknown')
+                out['errors_by_ambiguity_type'][amb] = out['errors_by_ambiguity_type'].get(amb, 0) + 1
+                det = r.get('variation_details', 'unknown')
+                out['errors_by_variation_details'][det] = out['errors_by_variation_details'].get(det, 0) + 1
+        return out
 
     def compare_with_clear_references(self, ambiguity_accuracy) -> Dict[str, Any]:
-        comparison = {'ambiguity_tolerance': 0.0, 'performance_drop': 0.0, 'robustness_assessment': ''}
+        comp = {'ambiguity_tolerance': 0.0, 'performance_drop': 0.0, 'robustness_assessment': ''}
         try:
             with open('step3_evaluation_results.json', 'r', encoding='utf-8') as f:
                 clear_results = json.load(f)
-                clear_accuracy = clear_results['metrics']['orientation_accuracy']
+                clear_acc = clear_results['metrics']['orientation_accuracy']
         except FileNotFoundError:
             print("Warning: Step3 evaluation results not found for comparison")
-            comparison['robustness_assessment'] = 'Cannot compare - Step3 results unavailable'
-            return comparison
+            comp['robustness_assessment'] = 'Cannot compare - Step3 results unavailable'
+            return comp
 
-        comparison['ambiguity_tolerance'] = ambiguity_accuracy / clear_accuracy if clear_accuracy > 0 else 0.0
-        comparison['performance_drop'] = clear_accuracy - ambiguity_accuracy
-        comparison['clear_reference_accuracy'] = clear_accuracy
-        comparison['ambiguous_reference_accuracy'] = ambiguity_accuracy
+        comp['ambiguity_tolerance'] = ambiguity_accuracy / clear_acc if clear_acc > 0 else 0.0
+        comp['performance_drop'] = clear_acc - ambiguity_accuracy
+        comp['clear_reference_accuracy'] = clear_acc
+        comp['ambiguous_reference_accuracy'] = ambiguity_accuracy
 
-        if comparison['ambiguity_tolerance'] >= 0.85:
-            comparison['robustness_assessment'] = 'Excellent robustness to referential ambiguity'
-        elif comparison['ambiguity_tolerance'] >= 0.75:
-            comparison['robustness_assessment'] = 'Good robustness to referential ambiguity'
-        elif comparison['ambiguity_tolerance'] >= 0.65:
-            comparison['robustness_assessment'] = 'Acceptable robustness with room for improvement'
+        if comp['ambiguity_tolerance'] >= 0.85:
+            comp['robustness_assessment'] = 'Excellent robustness to referential ambiguity'
+        elif comp['ambiguity_tolerance'] >= 0.75:
+            comp['robustness_assessment'] = 'Good robustness to referential ambiguity'
+        elif comp['ambiguity_tolerance'] >= 0.65:
+            comp['robustness_assessment'] = 'Acceptable robustness with room for improvement'
         else:
-            comparison['robustness_assessment'] = 'Poor robustness - model struggles with ambiguous references'
-        return comparison
+            comp['robustness_assessment'] = 'Poor robustness - model struggles with ambiguous references'
+        return comp
 
-    def run_r3_evaluation(self, robustness_path="Spatial_Robustness.xlsx") -> Dict[str, Any]:
+    def run_r3_evaluation(self, robustness_path="r3_robustness.xlsx") -> Dict[str, Any]:
         print("="*60)
         print("R3 Evaluation: Referential Ambiguity Set - Robustness Analysis")
-        print("Using Spatial_Robustness.xlsx for evaluation")
+        print("Using r3_robustness.xlsx for evaluation")
         print("="*60)
 
         self.load_model()
@@ -245,8 +223,8 @@ class R3EvaluatorReferentialAmbiguity:
         for i, (_, row) in enumerate(test_df.iterrows()):
             user_input = self.create_multimodal_input(row)
             expected_orientation = row['target_direction']
-            map_zh2en = {'東':'East','西':'West','南':'South','北':'North','東方':'East','西方':'West','南方':'South','北方':'North'}
-            expected_orientation = map_zh2en.get(expected_orientation, expected_orientation)
+            zh2en = {'東':'East','西':'West','南':'South','北':'North','東方':'East','西方':'West','南方':'South','北方':'North'}
+            expected_orientation = zh2en.get(expected_orientation, expected_orientation)
             sample_id = row.get('sample_id', i)
             variation_subtype = row.get('variation_subtype', 'unknown')
             variation_details = row.get('variation_details', 'N/A')
@@ -270,8 +248,7 @@ class R3EvaluatorReferentialAmbiguity:
                 print(f"Expected: {expected_orientation}")
                 print(f"Predicted: {predicted_output[:100]}...")
                 print(f"Predicted orientation: {predicted_orientation}")
-                print(f"Orientation correct: {'Yes' if orientation_correct else 'No'}")
-                print()
+                print(f"Orientation correct: {'Yes' if orientation_correct else 'No'}\n")
 
                 results.append({
                     'sample_id': self.convert_for_json(sample_id),
@@ -315,29 +292,27 @@ class R3EvaluatorReferentialAmbiguity:
         print(f"Format error rate: {format_error_rate:.3f} ({format_errors}/{total_samples})")
 
         if 'clear_reference_accuracy' in clear_comparison:
-            print(f"\nRobustness Comparison:")
+            print("\nRobustness Comparison:")
             print(f"Clear reference accuracy: {clear_comparison['clear_reference_accuracy']:.3f}")
             print(f"Ambiguous reference accuracy: {clear_comparison['ambiguous_reference_accuracy']:.3f}")
             print(f"Ambiguity tolerance: {clear_comparison['ambiguity_tolerance']:.3f}")
             print(f"Performance drop: {clear_comparison['performance_drop']:.3f}")
-            print(f"Assessment: {clear_comparison['robustness_assessment']}")
 
         if robustness_analysis['subtype_performance']:
-            print(f"\nPerformance by Ambiguity Type:")
+            print("\nPerformance by Ambiguity Type:")
             for subtype, stats in robustness_analysis['subtype_performance'].items():
                 print(f"{subtype}: {stats['accuracy']:.3f} ({stats['count']} samples)")
 
         if robustness_analysis['variation_details_performance']:
-            print(f"\nVariation Details Impact:")
+            print("\nVariation Details Impact:")
             for variation, stats in robustness_analysis['variation_details_performance'].items():
                 print(f"{variation}: {stats['accuracy']:.3f} ({stats['count']} samples)")
 
-        print(f"\nError Summary:")
-        print(f"Total error cases: {len(error_patterns['all_error_cases'])}")
+        print(f"\nError Summary: {len(error_patterns['all_error_cases'])} cases")
 
         evaluation_results = {
             'method': 'R3 - Referential Ambiguity Set',
-            'description': 'Robustness to semantic underspecification, incomplete utterances, and referential ambiguity using Spatial_Robustness.xlsx',
+            'description': 'Robustness to semantic underspecification, incomplete utterances, and referential ambiguity using r3_robustness.xlsx',
             'model_path': self.model_path,
             'test_data_source': robustness_path,
             'metrics': {
@@ -361,7 +336,7 @@ class R3EvaluatorReferentialAmbiguity:
 
 def main():
     evaluator = R3EvaluatorReferentialAmbiguity()
-    results = evaluator.run_r3_evaluation("Spatial_Robustness.xlsx")
+    results = evaluator.run_r3_evaluation("r3_robustness.xlsx")
     print("\n" + "="*60)
     print("FINAL R3 RESULTS FOR PAPER:")
     print(f"R3 Ambiguity Robustness: {results['metrics']['ambiguity_robustness_accuracy']:.3f}")
