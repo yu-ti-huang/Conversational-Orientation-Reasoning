@@ -1,9 +1,8 @@
 import json
 import re
 import torch
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from collections import Counter
 import gc
 import os
 
@@ -30,12 +29,12 @@ class B1BaselineEvaluator:
         gc.collect()
 
     def setup_data_files(self):
-        """確保測試檔存在"""
+        """Ensure test file exists"""
         os.makedirs(self.test_set_path, exist_ok=True)
-        csv_path = os.path.join(self.test_set_path, "spatial_test.csv")
+        csv_path = os.path.join(self.test_set_path, "step3_test.csv")
         if not os.path.exists(csv_path):
             raise FileNotFoundError(
-                f"找不到 {csv_path} 。請把 spatial_test.csv 放到 {self.test_set_path}/ 下再執行。"
+                f"Missing test CSV at {csv_path}. Please place step3_test.csv under {self.test_set_path}/ and retry."
             )
 
     def load_base_model_only(self):
@@ -80,17 +79,17 @@ class B1BaselineEvaluator:
                 print(f"GPU Memory: {allocated:.1f}GB allocated, {reserved:.1f}GB reserved")
 
         except torch.cuda.OutOfMemoryError:
-            print("GPU 記憶體不足! 建議：重新啟動環境、使用較大顯卡、或關閉其他程序。")
+            print("Out of GPU memory. Tips: restart runtime, use a larger GPU, or close other processes.")
             raise
         except Exception as e:
-            print(f"載入模型錯誤: {e}")
+            print(f"Model loading error: {e}")
             raise
 
     def load_test_set(self):
         """Load CSV test set"""
         import pandas as pd
 
-        test_set_path = os.path.join(self.test_set_path, "spatial_test.csv")
+        test_set_path = os.path.join(self.test_set_path, "step3_test.csv")
         try:
             df = pd.read_csv(test_set_path)
             print(f"Loaded {len(df)} test samples from {test_set_path}")
@@ -109,8 +108,8 @@ class B1BaselineEvaluator:
                         'has_asr_error': row.get('has_asr_error', False)
                     })
                 else:
-                    missing_cols = [c for c in ['multimodal_input_clean', 'training_target', 'target_direction'] if c not in df.columns]
-                    raise ValueError(f"Missing required columns: {missing_cols}")
+                    missing = [c for c in ['multimodal_input_clean', 'training_target', 'target_direction'] if c not in df.columns]
+                    raise ValueError(f"Missing required columns: {missing}")
 
             print(f"Successfully converted {len(test_data)} samples")
             print(f"Sample data structure: {list(test_data[0].keys())}")
@@ -191,7 +190,10 @@ class B1BaselineEvaluator:
                     eos_token_id=self.tokenizer.eos_token_id,
                     repetition_penalty=1.1
                 )
-            text = self.tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True).strip()
+            text = self.tokenizer.decode(
+                outputs[0][inputs['input_ids'].shape[1]:],
+                skip_special_tokens=True
+            ).strip()
             text = text.replace("ASSISTANT:", "").replace("Assistant:", "").strip()
             del outputs, inputs
             self.clear_memory()
@@ -253,7 +255,7 @@ class B1BaselineEvaluator:
 
                 if not predicted_orientation:
                     format_errors += 1
-                    print("Format error: Cannot extract final orientation")
+                    print("Format error: cannot extract final orientation")
 
                 orientation_correct = predicted_orientation == expected_orientation
                 if orientation_correct:
@@ -299,13 +301,13 @@ class B1BaselineEvaluator:
         print(f"Orientation accuracy: {orientation_accuracy:.3f} ({correct_orientations}/{total_samples})")
         print(f"Format error rate: {format_error_rate:.3f} ({format_errors}/{total_samples})")
 
-        print(f"\n錯誤案例分析 ({len(problematic_cases)} 個):")
+        print(f"\nError case analysis ({len(problematic_cases)} cases):")
         for case in problematic_cases[:5]:
-            print(f"\n樣本 {case['sample_index']}:")
-            print(f"  輸入: {case['input'][:100]}...")
-            print(f"  期望方向: {case['expected_orientation']}")
-            print(f"  預測方向: {case['predicted_orientation']}")
-            print(f"  模型輸出: {case['predicted_output'][:100]}...")
+            print(f"\nSample {case['sample_index']}:")
+            print(f"  Input: {case['input'][:100]}...")
+            print(f"  Expected: {case['expected_orientation']}")
+            print(f"  Predicted: {case['predicted_orientation']}")
+            print(f"  Output: {case['predicted_output'][:100]}...")
             print("-" * 50)
 
         print(f"\nPerformance Assessment:")
@@ -351,7 +353,7 @@ def main():
     evaluator = B1BaselineEvaluator()
     results = evaluator.run_b1_evaluation()
     print("\n" + "="*60)
-    print("FINAL B1 RESULTS FOR PAPER:")
+    print("FINAL B1 RESULTS:")
     print(f"B1 Zero-shot Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"B1 Format Error Rate: {results['metrics']['format_error_rate']:.3f}")
     print("="*60)
