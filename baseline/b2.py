@@ -61,9 +61,9 @@ class B2BaselineEvaluator:
         print("Base Taiwan LLM model loaded successfully (few-shot)!")
 
     def load_test_set(self):
-        test_set_path = f"{self.test_set_path}/spatial_test.csv"
-        df = pd.read_csv(test_set_path)
-        print(f"Loaded {len(df)} test samples from {test_set_path}")
+        csv_path = os.path.join(self.test_set_path, "step3_test.csv")
+        df = pd.read_csv(csv_path)
+        print(f"Loaded {len(df)} test samples from {csv_path}")
         print(f"CSV columns: {df.columns.tolist()}")
 
         test_data = []
@@ -221,7 +221,7 @@ def main():
     evaluator = B2BaselineEvaluator()
     results = evaluator.run_b2_evaluation()
     print("\n" + "="*60)
-    print("FINAL B2 RESULTS FOR PAPER:")
+    print("FINAL B2 RESULTS:")
     print(f"B2 Few-shot Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"B2 Format Error Rate: {results['metrics']['format_error_rate']:.3f}")
     print("="*60)
