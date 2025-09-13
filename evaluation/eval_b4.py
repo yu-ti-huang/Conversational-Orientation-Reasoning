@@ -56,7 +56,7 @@ class B4Evaluator:
         self.model.eval()
         print("B4 model loaded successfully!")
 
-    def load_test_data_from_csv(self, test_csv="spatial_test.csv"):
+    def load_test_data_from_csv(self, test_csv="step3_test.csv"):
         """Load test data directly from CSV file"""
         print(f"Loading test data from: {test_csv}")
         test_df = pd.read_csv(test_csv)
@@ -160,7 +160,7 @@ class B4Evaluator:
         self.clear_memory()
         return generated_text
 
-    def run_evaluation(self, test_csv="spatial_test.csv") -> Dict[str, Any]:
+    def run_evaluation(self, test_csv="step3_test.csv") -> Dict[str, Any]:
         """Run complete B4 evaluation"""
         print("="*60)
         print("B4 Evaluation: Fine-tuned Model Without Chain-of-Thought")
@@ -230,7 +230,7 @@ class B4Evaluator:
             'method': 'B4 - Fine-tuned Without Chain-of-Thought',
             'description': 'Direct input-to-orientation mapping without reasoning steps',
             'model_path': self.model_path,
-            'test_data_source': test_csv,
+            'test_data_source': step3_test.csv,
             'metrics': {
                 'total_samples': total_samples,
                 'orientation_accuracy': orientation_accuracy,
@@ -248,7 +248,7 @@ class B4Evaluator:
 
 def main():
     evaluator = B4Evaluator()
-    results = evaluator.run_evaluation("spatial_test.csv")
+    results = evaluator.run_evaluation("step3_test.csv")
 
     print("\n" + "="*60)
     print("FINAL B4 RESULTS FOR PAPER:")
