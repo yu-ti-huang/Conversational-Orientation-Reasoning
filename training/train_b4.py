@@ -21,10 +21,10 @@ class B4Evaluator:
         )
         self.model.eval()
 
-    def load_test_set(self, path="data/spatial_test.csv"):
+    def load_test_set(self, path="data/step3_test.csv"):
         return pd.read_csv(path)
 
-    def evaluate(self, test_csv="data/spatial_test.csv", save_path="b4_eval_results.json"):
+    def evaluate(self, test_csv="data/step3_test.csv", save_path="b4_eval_results.json"):
         df = self.load_test_set(test_csv)
         correct, total = 0, 0
         results = []
