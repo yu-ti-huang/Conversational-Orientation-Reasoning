@@ -10,12 +10,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 class B3BaselineEvaluator:
     """B3 Baseline Evaluator: Few-shot Prompting + CoT"""
 
-    def __init__(self, test_set_path="./data"):
-        self.test_set_path = test_set_path
+    def __init__(self, csv_path="./step3_test.csv"):
+        self.csv_path = csv_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'expandable_segments:True')
         self.clear_memory()
-        print(f"B3 Baseline Evaluator - Test set path: {self.test_set_path}")
+        print(f"B3 Baseline Evaluator - CSV: {self.csv_path}")
         print(f"Device: {self.device}")
 
     def clear_memory(self):
@@ -55,9 +55,8 @@ class B3BaselineEvaluator:
         print("Base Taiwan LLM model loaded successfully (few-shot CoT)!")
 
     def load_test_set(self):
-        csv_path = os.path.join(self.test_set_path, "step3_test.csv")
-        df = pd.read_csv(csv_path)
-        print(f"Loaded {len(df)} test samples from {csv_path}")
+        df = pd.read_csv(self.csv_path)
+        print(f"Loaded {len(df)} test samples from {self.csv_path}")
 
         test_data = []
         for _, row in df.iterrows():
@@ -315,7 +314,7 @@ class B3BaselineEvaluator:
         return evaluation_results
 
 def main():
-    evaluator = B3BaselineEvaluator()
+    evaluator = B3BaselineEvaluator(csv_path="./step3_test.csv")
     results = evaluator.run_b3_evaluation()
     print("\n" + "="*60)
     print("FINAL B3 RESULTS:")
