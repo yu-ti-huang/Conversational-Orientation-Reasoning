@@ -230,7 +230,7 @@ class B4Evaluator:
             'method': 'B4 - Fine-tuned Without Chain-of-Thought',
             'description': 'Direct input-to-orientation mapping without reasoning steps',
             'model_path': self.model_path,
-            'test_data_source': step3_test.csv,
+            'test_data_source': test_csv,
             'metrics': {
                 'total_samples': total_samples,
                 'orientation_accuracy': orientation_accuracy,
