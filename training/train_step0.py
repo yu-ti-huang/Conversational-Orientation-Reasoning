@@ -117,7 +117,7 @@ class Step0Trainer:
         result["labels"] = result["input_ids"].copy()
         return result
 
-    def train(self, json_path="step0_training_data.json", output_dir="./models/llama-step0", epochs=8):
+    def train(self, json_path="step0_train.json", output_dir="./models/llama-step0", epochs=8):
         self.clear_gpu_memory()
         self.setup_model_and_tokenizer()
 
@@ -196,7 +196,7 @@ class Step0Trainer:
 def main():
     trainer = Step0Trainer()
     trainer.train(
-        json_path="step0_training_data.json",
+        json_path="step0_train.json",
         output_dir="./models/llama-step0",
         epochs=8
     )
