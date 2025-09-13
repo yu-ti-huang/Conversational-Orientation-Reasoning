@@ -10,29 +10,25 @@ import os
 class R2EvaluatorCrossDomain:
     """R2 Evaluator: Cross-domain Test Set - Generalization Analysis"""
 
-    def __init__(self, model_path="./models/llama-step3/final_model", data_path="./TaipeiStation_Generalization.xlsx"):
+    def __init__(self, model_path="./models/llama-step3/final_model", data_path="./r2_cross_domain.xlsx"):
         self.model_path = model_path
         self.data_path = data_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"R2 Evaluator - Model path: {self.model_path}")
         print(f"R2 Evaluator - Cross-domain data: {self.data_path}")
 
-        # Memory optimization
         os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'expandable_segments:True')
         self.clear_memory()
 
     def clear_memory(self):
-        """Clear GPU memory"""
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
         gc.collect()
 
     def load_model(self):
-        """Load the trained Step 3 model"""
         print("Loading Step 3 model for R2 cross-domain evaluation...")
 
-        # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_path,
             trust_remote_code=True
@@ -40,7 +36,6 @@ class R2EvaluatorCrossDomain:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        # Load model with quantization
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
@@ -59,11 +54,9 @@ class R2EvaluatorCrossDomain:
         print("Step 3 model loaded successfully!")
 
     def load_cross_domain_dataset(self):
-        """Load cross-domain test dataset from Excel or CSV file"""
         print(f"Loading cross-domain test dataset from: {self.data_path}")
 
         try:
-            # Load Excel or CSV file
             if self.data_path.endswith('.xlsx'):
                 try:
                     df = pd.read_excel(self.data_path)
@@ -75,7 +68,6 @@ class R2EvaluatorCrossDomain:
             print(f"Cross-domain dataset loaded: {len(df)} samples")
             print(f"Domain: Taipei Station (different from training domain: Gongguan)")
             print(f"Columns: {list(df.columns)}")
-
             return df
 
         except FileNotFoundError:
@@ -84,32 +76,22 @@ class R2EvaluatorCrossDomain:
             raise Exception(f"Error loading data: {e}")
 
     def extract_expected_orientation(self, test_sample):
-        """Extract expected orientation from CSV test sample"""
-        # Handle both dict and pandas Series
         if hasattr(test_sample, 'get'):
             target_direction = test_sample.get('target_direction', '')
         else:
             target_direction = getattr(test_sample, 'target_direction', '')
 
-        # Convert English to Chinese
-        direction_map = {
-            'North': '北', 'South': '南',
-            'East': '東', 'West': '西'
-        }
+        direction_map = {'North': '北', 'South': '南', 'East': '東', 'West': '西'}
         return direction_map.get(target_direction, None)
 
     def extract_predicted_orientation(self, response: str) -> Optional[str]:
-        """Extract orientation from model response with Final Answer pattern"""
-        # Clean response first
         response = response.strip()
 
-        # Primary pattern: Final Answer
         final_answer_pattern = r'Final Answer[:：]\s*([北南東西])'
         match = re.search(final_answer_pattern, response)
         if match:
             return match.group(1)
 
-        # Fallback patterns
         orientation_patterns = [
             r'結論[:：]\s*使用者面朝([東西南北])方?',
             r'使用者面朝([東西南北])方?',
@@ -127,8 +109,10 @@ class R2EvaluatorCrossDomain:
         return None
 
     def generate_response(self, user_input: str) -> str:
-        """Generate model response for given input"""
-        prompt = f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        prompt = (
+            f"<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n"
+            f"{user_input}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+        )
 
         inputs = self.tokenizer(
             prompt,
@@ -137,7 +121,6 @@ class R2EvaluatorCrossDomain:
             max_length=768
         )
 
-        # Move to correct device
         device = next(self.model.parameters()).device
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
@@ -151,69 +134,60 @@ class R2EvaluatorCrossDomain:
                 eos_token_id=self.tokenizer.eos_token_id
             )
 
-        # Extract only the generated part
         generated_text = self.tokenizer.decode(
             outputs[0][inputs['input_ids'].shape[1]:],
             skip_special_tokens=True
         ).strip()
 
-        # Clean memory
         del outputs, inputs
         self.clear_memory()
-
         return generated_text
 
     def analyze_cross_domain_performance(self, results, test_df) -> Dict[str, Any]:
-        """Analyze cross-domain generalization performance"""
         analysis = {
             'domain_transfer_accuracy': 0.0,
             'asr_error_impact': {},
             'spatial_relation_performance': {}
         }
 
-        # Calculate domain transfer accuracy
         correct = sum(1 for r in results if r.get('orientation_correct', False))
         total = len(results)
         analysis['domain_transfer_accuracy'] = correct / total if total > 0 else 0.0
 
-        # ASR error impact analysis
         if 'has_asr_error' in test_df.columns:
             asr_error_results = [r for i, r in enumerate(results) if test_df.iloc[i].get('has_asr_error', False)]
             asr_clean_results = [r for i, r in enumerate(results) if not test_df.iloc[i].get('has_asr_error', False)]
 
             if asr_error_results:
-                asr_error_acc = sum(1 for r in asr_error_results if r.get('orientation_correct', False)) / len(asr_error_results)
-                analysis['asr_error_impact']['error_samples_accuracy'] = asr_error_acc
+                acc_err = sum(1 for r in asr_error_results if r.get('orientation_correct', False)) / len(asr_error_results)
+                analysis['asr_error_impact']['error_samples_accuracy'] = acc_err
                 analysis['asr_error_impact']['error_samples_count'] = len(asr_error_results)
 
             if asr_clean_results:
-                asr_clean_acc = sum(1 for r in asr_clean_results if r.get('orientation_correct', False)) / len(asr_clean_results)
-                analysis['asr_error_impact']['clean_samples_accuracy'] = asr_clean_acc
+                acc_clean = sum(1 for r in asr_clean_results if r.get('orientation_correct', False)) / len(asr_clean_results)
+                analysis['asr_error_impact']['clean_samples_accuracy'] = acc_clean
                 analysis['asr_error_impact']['clean_samples_count'] = len(asr_clean_results)
 
-        # Spatial relation performance
         if 'spatial_relations' in test_df.columns:
             spatial_relations = test_df['spatial_relations'].unique()
             for relation in spatial_relations:
                 relation_results = [r for i, r in enumerate(results) if test_df.iloc[i]['spatial_relations'] == relation]
                 if relation_results:
-                    relation_acc = sum(1 for r in relation_results if r.get('orientation_correct', False)) / len(relation_results)
+                    rel_acc = sum(1 for r in relation_results if r.get('orientation_correct', False)) / len(relation_results)
                     analysis['spatial_relation_performance'][relation] = {
-                        'accuracy': relation_acc,
+                        'accuracy': rel_acc,
                         'count': len(relation_results)
                     }
 
         return analysis
 
     def compare_with_training_domain(self, cross_domain_accuracy) -> Dict[str, Any]:
-        """Compare cross-domain performance with training domain performance"""
         comparison = {
             'generalization_ratio': 0.0,
             'performance_drop': 0.0,
             'generalization_assessment': ''
         }
 
-        # Try to load training domain performance from step3 results
         training_accuracy = None
         result_files = ['step3_evaluation_results.json', 'a4_evaluation_results.json', 'evaluation_results.json']
 
@@ -237,7 +211,6 @@ class R2EvaluatorCrossDomain:
         comparison['training_domain_accuracy'] = training_accuracy
         comparison['cross_domain_accuracy'] = cross_domain_accuracy
 
-        # Assessment
         if comparison['generalization_ratio'] >= 0.90:
             comparison['generalization_assessment'] = 'Excellent generalization'
         elif comparison['generalization_ratio'] >= 0.80:
@@ -250,14 +223,12 @@ class R2EvaluatorCrossDomain:
         return comparison
 
     def run_r2_evaluation(self) -> Dict[str, Any]:
-        """Run R2 evaluation: Cross-domain Test Set"""
         print("="*60)
         print("R2 Evaluation: Cross-domain Test Set - Generalization Analysis")
         print("Training Domain: Gongguan MRT Area")
         print("Test Domain: Taipei Station Area")
         print("="*60)
 
-        # Load model and cross-domain test set
         self.load_model()
         test_df = self.load_cross_domain_dataset()
 
@@ -270,7 +241,6 @@ class R2EvaluatorCrossDomain:
         for i, (_, row) in enumerate(test_df.iterrows()):
             print(f"\nSample {i+1}/{len(test_df)}")
 
-            # Get input and expected output
             user_input = row.get('multimodal_input_asr', row.get('multimodal_input_clean', ''))
             expected_orientation = self.extract_expected_orientation(row)
             sample_id = row.get('sample_id', i)
@@ -280,20 +250,16 @@ class R2EvaluatorCrossDomain:
             print(f"Expected: {expected_orientation}")
 
             try:
-                # Generate model response
                 predicted_output = self.generate_response(user_input)
                 print(f"Predicted: {predicted_output[:150]}...")
 
-                # Extract predicted orientation
                 predicted_orientation = self.extract_predicted_orientation(predicted_output)
                 print(f"Predicted orientation: {predicted_orientation}")
 
-                # Check format errors
                 if predicted_orientation is None:
                     format_errors += 1
                     print("Format error: Cannot extract orientation")
 
-                # Evaluate accuracy
                 orientation_correct = (
                     expected_orientation is not None and
                     predicted_orientation is not None and
@@ -306,7 +272,6 @@ class R2EvaluatorCrossDomain:
                 print(f"ASR Error: {'Yes' if row.get('has_asr_error', False) else 'No'}")
                 print(f"Orientation correct: {'Yes' if orientation_correct else 'No'}")
 
-                # Debug info for first few samples
                 if i < 3:
                     print(f"\n=== Debug Sample {i+1} ===")
                     print(f"Full Generated Output:\n{predicted_output}")
@@ -338,15 +303,11 @@ class R2EvaluatorCrossDomain:
                     'spatial_relation': row.get('spatial_relations', '')
                 })
 
-        # Basic metrics
         total_samples = len(test_df)
         cross_domain_accuracy = correct_orientations / total_samples
         format_error_rate = format_errors / total_samples
 
-        # Cross-domain analysis
         cross_domain_analysis = self.analyze_cross_domain_performance(results, test_df)
-
-        # Compare with training domain
         domain_comparison = self.compare_with_training_domain(cross_domain_accuracy)
 
         print("\n" + "="*60)
@@ -375,7 +336,6 @@ class R2EvaluatorCrossDomain:
         for relation, stats in cross_domain_analysis['spatial_relation_performance'].items():
             print(f"{relation}: {stats['accuracy']:.3f} ({stats['count']} samples)")
 
-        # Save results
         evaluation_results = {
             'method': 'R2 - Cross-domain Test Set',
             'description': 'Generalization from Gongguan to Taipei Station area',
@@ -395,17 +355,15 @@ class R2EvaluatorCrossDomain:
             'detailed_results': results
         }
 
-        # Save to file
         with open('r2_evaluation_results.json', 'w', encoding='utf-8') as f:
             json.dump(evaluation_results, f, ensure_ascii=False, indent=2)
 
         print(f"\nResults saved to: r2_evaluation_results.json")
-
         return evaluation_results
 
+
 def main():
-    """Run R2 evaluation"""
-    evaluator = R2EvaluatorCrossDomain(data_path="./TaipeiStation_Generalization.xlsx")
+    evaluator = R2EvaluatorCrossDomain(data_path="./r2_cross_domain.xlsx")
     results = evaluator.run_r2_evaluation()
 
     print("\n" + "="*60)
@@ -415,6 +373,7 @@ def main():
         print(f"R2 Generalization Ratio: {results['metrics']['domain_comparison']['generalization_ratio']:.3f}")
         print(f"R2 Performance Drop: {results['metrics']['domain_comparison']['performance_drop']:.3f}")
     print("="*60)
+
 
 if __name__ == "__main__":
     main()
