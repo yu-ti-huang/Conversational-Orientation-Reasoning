@@ -57,7 +57,7 @@ class Step3Evaluator:
         self.model.eval()
         print("Step 3 model loaded successfully!")
 
-    def load_test_data_from_csv(self, test_csv="spatial_test.csv"):
+    def load_test_data_from_csv(self, test_csv="step3_test.csv"):
         print(f"Loading test data from: {test_csv}")
         test_df = pd.read_csv(test_csv)
         test_data = []
@@ -338,9 +338,9 @@ class Step3Evaluator:
 
 def main():
     evaluator = Step3Evaluator()
-    results = evaluator.run_evaluation("spatial_test.csv")
+    results = evaluator.run_evaluation("step3_test.csv")
     print("\n" + "="*60)
-    print("FINAL RESULTS FOR PAPER:")
+    print("FINAL RESULTS:")
     print(f"Step 3 Orientation Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"Step 3 Reasoning Quality: {results['metrics']['average_reasoning_quality']:.3f}")
     print(f"Step 3 Complete Chain Rate: {results['metrics']['complete_reasoning_rate']:.3f}")
