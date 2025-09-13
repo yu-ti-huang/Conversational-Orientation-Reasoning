@@ -168,7 +168,7 @@ class Step2Trainer:
         result["labels"] = result["input_ids"].copy()
         return result
 
-    def train(self, json_path="step2_training_data.json", output_dir="./models/llama-step2", epochs=6):
+    def train(self, json_path="step2_train.json", output_dir="./models/llama-step2", epochs=6):
         print("=== Starting Step 2 spatial mapping inference training ===")
         print("Focus: Learn spatial mapping from landmark direction and spatial relation to user orientation")
 
@@ -245,7 +245,7 @@ class Step2Trainer:
 def main():
     trainer = Step2Trainer()
     trainer.train(
-        json_path="step2_training_data.json",
+        json_path="step2_train.json",
         output_dir="./models/llama-step2",
         epochs=6
     )
