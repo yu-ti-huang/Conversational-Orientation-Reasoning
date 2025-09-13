@@ -114,7 +114,7 @@ class Step3Trainer:
         result["labels"] = result["input_ids"].copy()
         return result
 
-    def train(self, train_path="spatial_train.csv", val_path="spatial_val.csv", test_path="spatial_test.csv",
+    def train(self, train_path="step3_train.csv", val_path="step3_val.csv", test_path="step3_test.csv",
               output_dir="./models/llama-step3", epochs=5):
         print("=== Starting Step 3 Complete Reasoning Training ===")
         self.clear_gpu_memory()
@@ -192,9 +192,9 @@ class Step3Trainer:
 def main():
     trainer = Step3Trainer()
     trainer.train(
-        train_path="spatial_train.csv",
-        val_path="spatial_val.csv",
-        test_path="spatial_test.csv",
+        train_path="step3_train.csv",
+        val_path="step3_val.csv",
+        test_path="step3_test.csv",
         output_dir="./models/llama-step3",
         epochs=5
     )
