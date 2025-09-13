@@ -11,7 +11,7 @@ import pandas as pd
 class A1AblationEvaluator:
     """A1 Ablation Study: Clean Text Only (No ASR Processing)"""
 
-    def __init__(self, model_path="./models/llama-step3/final_model", csv_path="./spatial_test.csv"):
+    def __init__(self, model_path="./models/llama-step3/final_model", csv_path="./step3_test.csv"):
         self.model_path = model_path
         self.csv_path = csv_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -172,17 +172,18 @@ class A1AblationEvaluator:
             'detailed_results': results
         }
 
-        with open('a1_evaluation_results.json', 'w', encoding='utf-8') as f:
+        os.makedirs("./results", exist_ok=True)
+        with open('./results/a1_evaluation_results.json', 'w', encoding='utf-8') as f:
             json.dump(evaluation_results, f, ensure_ascii=False, indent=2)
 
         return evaluation_results
 
 
 def main():
-    evaluator = A1AblationEvaluator(csv_path="./spatial_test.csv")
+    evaluator = A1AblationEvaluator(csv_path="./step3_test.csv")
     results = evaluator.run_evaluation()
     print("\n" + "="*60)
-    print("FINAL A1 RESULTS FOR PAPER:")
+    print("FINAL A1 RESULTS:")
     print(f"A1 Orientation Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"A1 Format Error Rate: {results['metrics']['format_error_rate']:.3f}")
     print("="*60)
