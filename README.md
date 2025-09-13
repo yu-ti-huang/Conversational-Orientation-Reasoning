@@ -22,8 +22,8 @@ pip install -r requirements.txt
 ```
 
 ## Training
-```bash
 To train the multimodal CoT model:
+```bash
 python train_step0.py
 python train_step1.py
 python train_step2.py
