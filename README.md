@@ -21,6 +21,11 @@ pip install -r requirements.txt
 └── LICENSE
 ```
 
+## Data
+
+All datasets are released at:  
+[Conversational-Orientation-Reasoning Dataset](https://huggingface.co/datasets/yu-ti-huang/Conversational-Orientation-Reasoning)
+
 ## Training
 To train the multimodal CoT model:
 ```bash
@@ -35,9 +40,13 @@ Run different evaluations:
 ```bash
 # Baseline
 python baseline/b1.py
+python baseline/b2.py
+python baseline/b3.py
 
 # Ablation
 python evaluation/eval_a1.py
+python evaluation/eval_a2.py
+python evaluation/eval_a3.py
 
 # Cross-domain
 python evaluation/r2.py
