@@ -14,8 +14,7 @@ pip install -r requirements.txt
 .
 ├── baseline/                 # Baseline models and scripts
 ├── evaluation/               # Evaluation scripts (A1, A2, A3, R2, R3, etc.)
-├── models/                   # Pretrained and fine-tuned models
-├── data/                     # Datasets (CSV/Excel files)
+├── training/                   # Pretrained and fine-tuned models
 ├── requirements.txt
 ├── README.md
 └── LICENSE
@@ -38,6 +37,13 @@ python train_step3.py
 ## Evaluation
 Run different evaluations:
 ```bash
+# Model
+python evaluation/eval_step0.py
+python evaluation/eval_step1.py
+python evaluation/eval_step2.py
+python evaluation/eval_step3_clean.py
+python evaluation/eval_step3_asr.py
+
 # Baseline
 python baseline/b1.py
 python baseline/b2.py
@@ -47,6 +53,7 @@ python baseline/b3.py
 python evaluation/eval_a1.py
 python evaluation/eval_a2.py
 python evaluation/eval_a3.py
+python evaluation/eval_b4.py
 
 # Cross-domain
 python evaluation/r2.py
