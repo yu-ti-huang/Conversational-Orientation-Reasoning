@@ -10,10 +10,10 @@ import os
 class B2BaselineEvaluator:
     """B2 Baseline Evaluator: Few-shot Prompting (No CoT)"""
 
-    def __init__(self, test_set_path="./data"):
-        self.test_set_path = test_set_path
+    def __init__(self, csv_path="./step3_test.csv"):
+        self.csv_path = csv_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"B2 Baseline Evaluator - Test set path: {self.test_set_path}")
+        print(f"B2 Baseline Evaluator - CSV: {self.csv_path}")
         print(f"Device: {self.device}")
 
         if torch.cuda.is_available():
@@ -30,7 +30,6 @@ class B2BaselineEvaluator:
         gc.collect()
 
     def load_base_model_only(self):
-        """Load base Taiwan LLM without LoRA weights"""
         print("Loading base Taiwan LLM model (few-shot baseline)...")
         base_model_path = "yentinglin/Taiwan-LLM-13B-v2.0-Chat"
 
@@ -61,9 +60,8 @@ class B2BaselineEvaluator:
         print("Base Taiwan LLM model loaded successfully (few-shot)!")
 
     def load_test_set(self):
-        csv_path = os.path.join(self.test_set_path, "step3_test.csv")
-        df = pd.read_csv(csv_path)
-        print(f"Loaded {len(df)} test samples from {csv_path}")
+        df = pd.read_csv(self.csv_path)
+        print(f"Loaded {len(df)} test samples from {self.csv_path}")
         print(f"CSV columns: {df.columns.tolist()}")
 
         test_data = []
@@ -218,7 +216,7 @@ class B2BaselineEvaluator:
         return evaluation_results
 
 def main():
-    evaluator = B2BaselineEvaluator()
+    evaluator = B2BaselineEvaluator(csv_path="./step3_test.csv")
     results = evaluator.run_b2_evaluation()
     print("\n" + "="*60)
     print("FINAL B2 RESULTS:")
