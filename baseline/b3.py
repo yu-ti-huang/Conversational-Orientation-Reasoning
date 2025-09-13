@@ -55,9 +55,9 @@ class B3BaselineEvaluator:
         print("Base Taiwan LLM model loaded successfully (few-shot CoT)!")
 
     def load_test_set(self):
-        test_set_path = f"{self.test_set_path}/spatial_test.csv"
-        df = pd.read_csv(test_set_path)
-        print(f"Loaded {len(df)} test samples from {test_set_path}")
+        csv_path = os.path.join(self.test_set_path, "step3_test.csv")
+        df = pd.read_csv(csv_path)
+        print(f"Loaded {len(df)} test samples from {csv_path}")
 
         test_data = []
         for _, row in df.iterrows():
@@ -318,7 +318,7 @@ def main():
     evaluator = B3BaselineEvaluator()
     results = evaluator.run_b3_evaluation()
     print("\n" + "="*60)
-    print("FINAL B3 RESULTS FOR PAPER:")
+    print("FINAL B3 RESULTS:")
     print(f"B3 Few-shot CoT Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"B3 Reasoning Quality: {results['metrics']['average_reasoning_quality']:.3f}")
     print(f"B3 Format Error Rate: {results['metrics']['format_error_rate']:.3f}")
