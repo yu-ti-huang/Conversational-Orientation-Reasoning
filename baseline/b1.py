@@ -9,10 +9,10 @@ import os
 class B1BaselineEvaluator:
     """B1 Baseline Evaluator: Zero-shot Pretrained Model"""
 
-    def __init__(self, test_set_path="./data"):
-        self.test_set_path = test_set_path
+    def __init__(self, csv_path="./step3_test.csv"):
+        self.csv_path = csv_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"B1 Baseline Evaluator - Test set path: {self.test_set_path}")
+        print(f"B1 Baseline Evaluator - CSV: {self.csv_path}")
         print(f"Device: {self.device}")
 
         if torch.cuda.is_available():
@@ -29,16 +29,12 @@ class B1BaselineEvaluator:
         gc.collect()
 
     def setup_data_files(self):
-        """Ensure test file exists"""
-        os.makedirs(self.test_set_path, exist_ok=True)
-        csv_path = os.path.join(self.test_set_path, "step3_test.csv")
-        if not os.path.exists(csv_path):
+        if not os.path.exists(self.csv_path):
             raise FileNotFoundError(
-                f"Missing test CSV at {csv_path}. Please place step3_test.csv under {self.test_set_path}/ and retry."
+                f"Missing test CSV at {self.csv_path}. Please place step3_test.csv and retry."
             )
 
     def load_base_model_only(self):
-        """Load base Taiwan LLM without LoRA weights"""
         print("Loading base Taiwan LLM model (zero-shot baseline)...")
         base_model_path = "yentinglin/Taiwan-LLM-13B-v2.0-Chat"
 
@@ -86,13 +82,11 @@ class B1BaselineEvaluator:
             raise
 
     def load_test_set(self):
-        """Load CSV test set"""
         import pandas as pd
 
-        test_set_path = os.path.join(self.test_set_path, "step3_test.csv")
         try:
-            df = pd.read_csv(test_set_path)
-            print(f"Loaded {len(df)} test samples from {test_set_path}")
+            df = pd.read_csv(self.csv_path)
+            print(f"Loaded {len(df)} test samples from {self.csv_path}")
             print(f"CSV columns: {df.columns.tolist()}")
 
             test_data = []
@@ -116,7 +110,7 @@ class B1BaselineEvaluator:
             return test_data, {'test_size': len(test_data)}
 
         except FileNotFoundError:
-            raise FileNotFoundError(f"Test set not found at {test_set_path}.")
+            raise FileNotFoundError(f"Test set not found at {self.csv_path}.")
         except Exception as e:
             print(f"Error loading CSV: {e}")
             raise
@@ -350,7 +344,7 @@ class B1BaselineEvaluator:
         return evaluation_results
 
 def main():
-    evaluator = B1BaselineEvaluator()
+    evaluator = B1BaselineEvaluator(csv_path="./step3_test.csv")
     results = evaluator.run_b1_evaluation()
     print("\n" + "="*60)
     print("FINAL B1 RESULTS:")
