@@ -1,0 +1,7 @@
+torch
+transformers
+bitsandbytes
+pandas
+numpy
+openpyxl
+accelerate
