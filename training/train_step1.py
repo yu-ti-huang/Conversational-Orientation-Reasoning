@@ -138,7 +138,7 @@ class Step1Trainer:
         result["labels"] = result["input_ids"].copy()
         return result
 
-    def train(self, json_path="step1_training_data.json", output_dir="./models/llama-step1", epochs=8):
+    def train(self, json_path="step1_train.json", output_dir="./models/llama-step1", epochs=8):
         print("=== Training Step 1 ===")
 
         self.clear_gpu_memory()
@@ -217,7 +217,7 @@ class Step1Trainer:
 def main():
     trainer = Step1Trainer()
     trainer.train(
-        json_path="step1_training_data.json",
+        json_path="step1_train.json",
         output_dir="./models/llama-step1",
         epochs=8
     )
