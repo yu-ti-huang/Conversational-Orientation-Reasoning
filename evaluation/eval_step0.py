@@ -203,7 +203,7 @@ def main():
     evaluator = Step0Evaluator()
     results = evaluator.run_evaluation()
     print("\n" + "="*60)
-    print("FINAL RESULTS FOR PAPER:")
+    print("FINAL RESULTS:")
     print(f"Step 0 Exact Match Accuracy: {results['metrics']['exact_match_accuracy']:.3f}")
     print(f"Step 0 Partial Match Accuracy: {results['metrics']['partial_match_accuracy']:.3f}")
     print("="*60)
