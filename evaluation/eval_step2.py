@@ -197,7 +197,7 @@ def main():
     evaluator = Step2Evaluator()
     results = evaluator.run_evaluation()
     print("\n" + "="*60)
-    print("FINAL RESULTS FOR PAPER:")
+    print("FINAL RESULTS:")
     print(f"Step 2 Orientation Accuracy: {results['metrics']['orientation_accuracy']:.3f}")
     print(f"Step 2 Reasoning Quality: {results['metrics']['average_reasoning_quality']:.3f}")
     print("="*60)
