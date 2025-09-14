@@ -183,7 +183,7 @@ def main():
     evaluator = Step1Evaluator()
     results = evaluator.run_evaluation()
     print("\n" + "="*60)
-    print("FINAL RESULTS FOR PAPER:")
+    print("FINAL RESULTS:")
     print(f"Step 1 Vector Accuracy: {results['metrics']['vector_accuracy']:.3f}")
     print(f"Step 1 Direction Accuracy: {results['metrics']['direction_accuracy']:.3f}")
     print(f"Step 1 Overall Accuracy: {results['metrics']['overall_accuracy']:.3f}")
