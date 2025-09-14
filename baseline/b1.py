@@ -304,21 +304,6 @@ class B1BaselineEvaluator:
             print(f"  Output: {case['predicted_output'][:100]}...")
             print("-" * 50)
 
-        print(f"\nPerformance Assessment:")
-        if orientation_accuracy >= 0.70:
-            print("Strong zero-shot performance - model shows good spatial reasoning ability")
-        elif orientation_accuracy >= 0.50:
-            print("Moderate zero-shot performance - better than random")
-        elif orientation_accuracy >= 0.25:
-            print("Weak zero-shot performance - close to random guessing")
-        else:
-            print("Very poor zero-shot performance - worse than random")
-
-        print(f"\nB1 Baseline Summary:")
-        print("- Zero-shot baseline without any fine-tuning")
-        print("- Direct orientation prediction from multimodal input")
-        print("- Establishes lower bound performance for comparison")
-
         evaluation_results = {
             'method': 'B1 - Zero-shot Baseline',
             'description': 'Taiwan LLM without fine-tuning; directly predicts from raw input',
