@@ -13,7 +13,7 @@ pip install -r requirements.txt
 ```bash
 .
 ├── baseline/                 # Baseline models and scripts
-├── evaluation/               # Evaluation scripts (A1, A2, A3, R2, R3, etc.)
+├── evaluation/               # Evaluation scripts
 ├── training/                 # Pretrained and fine-tuned models
 ├── requirements.txt
 ├── README.md
