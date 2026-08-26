@@ -132,7 +132,7 @@ class Step1Trainer:
         result = self.tokenizer(
             examples["text"],
             truncation=True,
-            padding=True,
+            padding=False,
             max_length=320,
         )
         result["labels"] = result["input_ids"].copy()
