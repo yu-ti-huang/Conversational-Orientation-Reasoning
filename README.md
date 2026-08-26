@@ -1,8 +1,8 @@
 ## Installation
 Clone the repository and install dependencies:
 ```bash
-git clone https://github.com/yu-ti-huang/EgocentricSpatialReferenceResolutionUnderASRNoiseinTraditionalChineseConversationalNavigation.git
-cd EgocentricSpatialReferenceResolutionUnderASRNoiseinTraditionalChineseConversationalNavigation
+git clone https://github.com/yu-ti-huang/Conversational-Orientation-Reasoning.git
+cd Conversational-Orientation-Reasoning
 pip install -r requirements.txt
 ```
 ## Repository Structure
@@ -19,7 +19,7 @@ pip install -r requirements.txt
 ## Data
 
 All datasets are released at:  
-[Egocentric-Spatial-Reference-Resolution Dataset](https://huggingface.co/datasets/yu-ti-huang/Egocentric-Spatial-Reference-Resolution)
+[Conversational-Orientation-Reasoning Dataset](https://huggingface.co/datasets/yu-ti-huang/Conversational-Orientation-Reasoning)
 
 ## Training
 To train the multimodal CoT model:
