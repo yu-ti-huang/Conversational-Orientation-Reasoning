@@ -177,7 +177,7 @@ class B1BaselineEvaluator:
                 outputs = self.model.generate(
                     **inputs,
                     max_new_tokens=10,
-                    do_sample=True,
+                    do_sample=False,
                     temperature=0.7,
                     top_p=0.9,
                     pad_token_id=self.tokenizer.pad_token_id,
