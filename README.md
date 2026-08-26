@@ -10,7 +10,7 @@ pip install -r requirements.txt
 .
 ├── baseline/                 # Baseline models and scripts
 ├── evaluation/               # Evaluation scripts
-├── training/                 # Pretrained and fine-tuned models
+├── training/                 # Model training scripts
 ├── requirements.txt
 ├── README.md
 └── LICENSE
@@ -68,10 +68,12 @@ Dependencies are listed in requirements.txt:
 torch
 transformers
 bitsandbytes
+peft
+datasets
+accelerate
 pandas
 numpy
 openpyxl
-accelerate
 ```
 
 ## License
