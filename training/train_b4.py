@@ -41,9 +41,9 @@ class B4Evaluator:
 
             generated = self.tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True).strip()
             predicted = None
-            for d in ["東方", "西方", "南方", "北方"]:
+            for d in ["東方", "西方", "南方", "北方", "東", "西", "南", "北"]:
                 if d in generated:
-                    predicted = d
+                    predicted = d if d.endswith("方") else f"{d}方"
                     break
 
             correct_flag = (predicted == expected)
