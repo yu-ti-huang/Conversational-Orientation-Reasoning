@@ -2,7 +2,7 @@
 Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/yu-ti-huang/EgocentricSpatialReferenceResolutionUnderASRNoiseinTraditionalChineseConversationalNavigation.git
-cd Egocentric-Spatial-Reference-Resolution
+cd EgocentricSpatialReferenceResolutionUnderASRNoiseinTraditionalChineseConversationalNavigation
 pip install -r requirements.txt
 ```
 ## Repository Structure
@@ -48,7 +48,6 @@ python evaluation/eval_step3_asr.py
 python baseline/b1.py
 python baseline/b2.py
 python baseline/b3.py
-python evaluation/eval_b4.py
 
 # Ablation
 python evaluation/eval_a1.py
