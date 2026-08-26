@@ -1,7 +1,9 @@
 torch
 transformers
 bitsandbytes
+peft
+datasets
+accelerate
 pandas
 numpy
 openpyxl
-accelerate
